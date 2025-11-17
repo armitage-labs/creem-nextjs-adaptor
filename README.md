@@ -5,22 +5,20 @@
   
   <a href="#installation">Installation</a> · 
   <a href="#quick-start">Quick Start</a> · 
-  <a href="#documentation">Documentation</a> · 
-  <a href="#examples">Examples</a>
+  <a href="#documentation">Documentation</a>
 </div>
 
 ---
 
 ## Introduction
 
-`@creem_io/nextjs` is the official Next.js integration for [Creem](https://creem.io) - a modern payment platform. This library provides:
+`@creem_io/nextjs` is the official Next.js integration for [Creem](https://www.creem.io) - a modern payment platform. This library provides:
 
 - 🎨 **React Components** - Drop-in components for checkout and customer portal
 - 🔐 **Type-Safe** - Full TypeScript support with comprehensive type definitions
 - ⚡ **Zero Config** - Works out of the box with Next.js App Router
 - 🪝 **Webhook Management** - Simple, type-safe webhook handlers with automatic verification
 - 🔄 **Subscription Lifecycle** - Built-in access management for subscription-based products
-- 🎯 **Developer Experience** - Intuitive API design with great DX
 
 ## Why?
 
@@ -42,19 +40,19 @@ Install the package using your preferred package manager:
 #### npm
 
 ```bash
-npm install @creem_io/nextjs -E
+npm install @creem_io/nextjs
 ```
 
 #### yarn
 
 ```bash
-yarn add @creem_io/nextjs -E
+yarn add @creem_io/nextjs
 ```
 
 #### pnpm
 
 ```bash
-pnpm install @creem_io/nextjs -E
+pnpm install @creem_io/nextjs
 ```
 
 ### Requirements
@@ -332,30 +330,6 @@ onGrantAccess: async ({ reason, customer, product, metadata }) => {
 };
 ```
 
-**Context Properties:**
-
-```typescript
-{
-  reason: "subscription_active" | "subscription_trialing" | "subscription_paid";
-  customer: {
-    id: string;
-    email: string;
-    name: string;
-  };
-  product: {
-    id: string;
-    name: string;
-  };
-  subscription: {
-    id: string;
-    status: string;
-    currentPeriodStart: number;
-    currentPeriodEnd: number;
-  };
-  metadata?: Record<string, unknown>;
-}
-```
-
 #### `onRevokeAccess`
 
 Called when a user's access should be revoked. This happens when:
@@ -377,274 +351,7 @@ onRevokeAccess: async ({ reason, customer, product, metadata }) => {
 };
 ```
 
-**Context Properties:**
-
-```typescript
-{
-  reason: "subscription_paused" | "subscription_expired";
-  customer: { /* same as onGrantAccess */ };
-  product: { /* same as onGrantAccess */ };
-  subscription: { /* same as onGrantAccess */ };
-  metadata?: Record<string, unknown>;
-}
-```
-
 > **⚠️ Important:** Both callbacks may be called multiple times for the same user/subscription. Always implement these as **idempotent operations** (safe to call repeatedly).
-
----
-
-## Examples
-
-### Complete Subscription Flow
-
-Here's a complete example of a subscription-based SaaS application:
-
-**1. Environment Variables** (`.env.local`)
-
-```bash
-CREEM_API_KEY=sk_live_...
-CREEM_WEBHOOK_SECRET=whsec_...
-DATABASE_URL=postgresql://...
-```
-
-**2. Checkout Route** (`app/checkout/route.ts`)
-
-```typescript
-import { Checkout } from "@creem_io/nextjs";
-
-export const GET = Checkout({
-  apiKey: process.env.CREEM_API_KEY!,
-  testMode: false,
-  defaultSuccessUrl: "/dashboard",
-});
-```
-
-**3. Portal Route** (`app/portal/route.ts`)
-
-```typescript
-import { Portal } from "@creem_io/nextjs";
-
-export const GET = Portal({
-  apiKey: process.env.CREEM_API_KEY!,
-  testMode: false,
-});
-```
-
-**4. Webhook Handler** (`app/api/webhook/creem/route.ts`)
-
-```typescript
-import { Webhook } from "@creem_io/nextjs";
-import { db } from "@/lib/db";
-
-export const POST = Webhook({
-  webhookSecret: process.env.CREEM_WEBHOOK_SECRET!,
-
-  onCheckoutCompleted: async ({ customer, product, order, metadata }) => {
-    console.log(`Purchase completed: ${customer.email} bought ${product.name}`);
-
-    // Store order in database
-    await db.order.create({
-      data: {
-        userId: metadata?.referenceId as string,
-        orderId: order.id,
-        productId: product.id,
-        amount: order.amount,
-      },
-    });
-  },
-
-  onGrantAccess: async ({
-    reason,
-    customer,
-    product,
-    subscription,
-    metadata,
-  }) => {
-    const userId = metadata?.referenceId as string;
-
-    // Update user subscription status
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        subscriptionStatus: "active",
-        subscriptionId: subscription.id,
-        creemCustomerId: customer.id,
-        plan: product.name,
-        subscriptionEndsAt: new Date(subscription.currentPeriodEnd * 1000),
-      },
-    });
-
-    console.log(`✅ Access granted (${reason}) to ${customer.email}`);
-  },
-
-  onRevokeAccess: async ({ reason, customer, subscription, metadata }) => {
-    const userId = metadata?.referenceId as string;
-
-    // Revoke access
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        subscriptionStatus: "inactive",
-        subscriptionEndsAt: new Date(subscription.currentPeriodEnd * 1000),
-      },
-    });
-
-    console.log(`❌ Access revoked (${reason}) from ${customer.email}`);
-  },
-
-  onRefundCreated: async ({ refund, order, customer }) => {
-    // Handle refund
-    await db.order.update({
-      where: { orderId: order.id },
-      data: { refunded: true, refundAmount: refund.amount },
-    });
-  },
-});
-```
-
-**5. Pricing Page** (`app/pricing/page.tsx`)
-
-```typescript
-"use client";
-
-import { CreemCheckout } from "@creem_io/nextjs";
-import { useSession } from "next-auth/react";
-
-export default function PricingPage() {
-  const { data: session } = useSession();
-
-  return (
-    <div className="grid grid-cols-3 gap-8">
-      {/* Starter Plan */}
-      <div className="border rounded-lg p-6">
-        <h3 className="text-2xl font-bold">Starter</h3>
-        <p className="text-4xl font-bold my-4">
-          $29<span className="text-sm">/mo</span>
-        </p>
-
-        <CreemCheckout
-          productId="prod_starter_123"
-          customer={{
-            email: session?.user?.email,
-            name: session?.user?.name,
-          }}
-          referenceId={session?.user?.id}
-          successUrl="/dashboard?welcome=true"
-          metadata={{
-            plan: "starter",
-            source: "pricing_page",
-          }}
-        >
-          <button className="w-full bg-blue-600 text-white py-3 rounded-lg">
-            Get Started
-          </button>
-        </CreemCheckout>
-      </div>
-
-      {/* Pro Plan */}
-      <div className="border rounded-lg p-6">
-        <h3 className="text-2xl font-bold">Pro</h3>
-        <p className="text-4xl font-bold my-4">
-          $99<span className="text-sm">/mo</span>
-        </p>
-
-        <CreemCheckout
-          productId="prod_pro_456"
-          customer={{
-            email: session?.user?.email,
-            name: session?.user?.name,
-          }}
-          referenceId={session?.user?.id}
-          successUrl="/dashboard?welcome=true"
-        >
-          <button className="w-full bg-blue-600 text-white py-3 rounded-lg">
-            Get Started
-          </button>
-        </CreemCheckout>
-      </div>
-    </div>
-  );
-}
-```
-
-**6. Dashboard with Portal Link** (`app/dashboard/page.tsx`)
-
-```typescript
-import { CreemPortal } from "@creem_io/nextjs";
-import { getCurrentUser } from "@/lib/auth";
-
-export default async function Dashboard() {
-  const user = await getCurrentUser();
-
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Plan: {user.plan}</p>
-      <p>Status: {user.subscriptionStatus}</p>
-
-      <CreemPortal
-        customerId={user.creemCustomerId}
-        returnUrl="/dashboard"
-        className="btn-secondary"
-      >
-        Manage Subscription
-      </CreemPortal>
-    </div>
-  );
-}
-```
-
----
-
-### One-Time Payment
-
-For one-time purchases (not subscriptions):
-
-```typescript
-"use client";
-
-import { CreemCheckout } from "@creem_io/nextjs";
-
-export default function ProductPage() {
-  return (
-    <div>
-      <h1>Premium Course</h1>
-      <p>One-time payment of $199</p>
-
-      <CreemCheckout
-        productId="prod_course_123"
-        units={1}
-        successUrl="/courses/premium/access"
-        metadata={{
-          courseId: "premium-nextjs-course",
-          type: "one-time",
-        }}
-      >
-        <button className="bg-green-600 text-white px-6 py-3 rounded-lg">
-          Buy Now - $199
-        </button>
-      </CreemCheckout>
-    </div>
-  );
-}
-```
-
-Handle in webhook:
-
-```typescript
-onCheckoutCompleted: async ({ customer, product, order, metadata }) => {
-  if (metadata?.type === "one-time") {
-    // Grant lifetime access to course
-    await db.courseAccess.create({
-      data: {
-        userId: metadata.referenceId as string,
-        courseId: metadata.courseId as string,
-        expiresAt: null, // lifetime access
-      },
-    });
-  }
-};
-```
 
 ---
 
@@ -691,39 +398,6 @@ onCheckoutCompleted: async ({ metadata }) => {
   const { orderId, source, campaign, affiliateId } = metadata;
   // Use your custom data
 };
-```
-
----
-
-## TypeScript Support
-
-This library is written in TypeScript and provides comprehensive type definitions for all APIs.
-
-### Webhook Event Types
-
-All webhook callbacks receive fully-typed data:
-
-```typescript
-import type {
-  FlatCheckoutCompleted,
-  FlatRefundCreated,
-  FlatSubscriptionEvent,
-  GrantAccessContext,
-  RevokeAccessContext,
-} from "@creem_io/nextjs";
-
-// Full autocomplete and type safety
-onCheckoutCompleted: async (data: FlatCheckoutCompleted) => {
-  data.customer.email; // ✅ string
-  data.product.name; // ✅ string
-  data.order.amount; // ✅ number
-};
-```
-
-### Component Props
-
-```typescript
-import type { CreemPortalProps, CreateCheckoutInput } from "@creem_io/nextjs";
 ```
 
 ---
@@ -833,84 +507,9 @@ https://abc123.ngrok.io/api/webhook/creem
 
 ---
 
-## Migration Guide
-
-### From Direct Creem SDK
-
-If you're using the Creem SDK directly, migration is straightforward:
-
-**Before:**
-
-```typescript
-import { Creem } from "creem";
-
-const creem = new Creem({ apiKey: "..." });
-const checkout = await creem.createCheckout({...});
-```
-
-**After:**
-
-```typescript
-import { Checkout } from "@creem_io/nextjs";
-
-export const GET = Checkout({
-  apiKey: process.env.CREEM_API_KEY!,
-});
-```
-
----
-
-## Troubleshooting
-
-### Webhooks Not Working
-
-1. **Check webhook secret**: Ensure `CREEM_WEBHOOK_SECRET` is correct
-2. **Verify URL**: Webhook URL must be publicly accessible
-3. **Check logs**: Look for errors in your webhook handler
-4. **Test signature**: Use Creem's webhook testing tool in the dashboard
-
-### Checkout Redirect Not Working
-
-1. **Verify API key**: Ensure `CREEM_API_KEY` is correct
-2. **Check product ID**: Verify the product exists in your dashboard
-3. **Test mode**: Ensure `testMode` matches your API key type
-4. **Console errors**: Check browser console for JavaScript errors
-
-### TypeScript Errors
-
-If you're getting TypeScript errors, ensure you have the latest version:
-
-```bash
-npm install @creem_io/nextjs@latest -E
-```
-
----
-
-## FAQ
-
-**Q: Do I need to set up CORS?**  
-A: No, all API calls are made server-side through Next.js Route Handlers.
-
-**Q: Can I use this with the Pages Router?**  
-A: This library is designed for the App Router. For Pages Router, use the Creem SDK directly.
-
-**Q: How do I handle refunds?**  
-A: Use the `onRefundCreated` webhook callback to handle refund notifications.
-
-**Q: Can I customize the checkout page?**  
-A: The checkout page is hosted by Creem and customizable in your dashboard settings.
-
-**Q: How do I test without real payments?**  
-A: Use `testMode: true` and test API keys from your Creem dashboard.
-
-**Q: Is this production-ready?**  
-A: Yes! This library is used by production applications processing real payments.
-
----
-
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please reach out on Discord for details.
 
 ### Development Setup
 
@@ -935,29 +534,11 @@ npm run dev
 ## Support
 
 - 📧 **Email**: support@creem.io
-- 💬 **Discord**: [Join our community](https://discord.gg/creem)
+- 💬 **Discord**: [Join our community](https://discord.gg/q3GKZs92Av)
 - 📚 **Documentation**: [docs.creem.io](https://docs.creem.io)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/creem-nextjs/issues)
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 ## Authors
 
 Built with ❤️ by the [Creem](https://creem.io) team.
-
----
-
-<div align="center">
-  <p>Made with ❤️ for the Next.js community</p>
-  <p>
-    <a href="https://creem.io">Website</a> · 
-    <a href="https://docs.creem.io">Documentation</a> · 
-    <a href="https://github.com/yourusername/creem-nextjs">GitHub</a>
-  </p>
-</div>

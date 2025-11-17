@@ -34,26 +34,17 @@ export interface CreemPortalProps {
    */
   customerId: string;
 
-  /**
-   * Optional URL to return to after the portal session.
-   * @optional
-   * @example "/dashboard"
-   */
-  returnUrl?: string;
-
   children?: React.ReactNode;
 }
 
 export const CreemPortal = ({
   customerId,
-  returnUrl,
   children = "Portal",
   ...linkProps
 }: CreemPortalProps & Omit<React.ComponentProps<"a">, "href">) => {
   // Build query params from portal input
   const params = new URLSearchParams();
   if (customerId) params.append("customerId", customerId);
-  if (returnUrl) params.append("returnUrl", returnUrl);
 
   const href = `/portal?${params.toString()}`;
 
