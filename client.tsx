@@ -42,7 +42,6 @@ export const CreemPortal = ({
   children = "Portal",
   ...linkProps
 }: CreemPortalProps & Omit<React.ComponentProps<"a">, "href">) => {
-  // Build query params from portal input
   const params = new URLSearchParams();
   if (customerId) params.append("customerId", customerId);
 
