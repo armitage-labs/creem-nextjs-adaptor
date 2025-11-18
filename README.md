@@ -20,17 +20,6 @@
 - 🪝 **Webhook Management** - Simple, type-safe webhook handlers with automatic verification
 - 🔄 **Subscription Lifecycle** - Built-in access management for subscription-based products
 
-## Why?
-
-Building payment integrations shouldn't be complicated. Most payment libraries require you to:
-
-- Manage complex checkout flows
-- Handle webhook signatures manually
-- Write boilerplate for subscription management
-- Deal with type inconsistencies
-
-`@creem_io/nextjs` solves these problems by providing a seamless, type-safe integration that follows Next.js conventions and handles the complex parts for you.
-
 ---
 
 ## Installation
