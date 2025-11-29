@@ -197,7 +197,7 @@ export interface WebhookOptions {
    * All properties are flattened for easy destructuring.
    *
    * @example
-   * onCheckoutCompleted: async ({ webhookEventType, product, customer, order, subscription }) => {
+   * onCheckoutCompleted: async ({ webhookEventType, product, customer, order }) => {
    *   console.log(`Checkout completed: ${customer?.email} purchased ${product.name}`);
    * }
    */
