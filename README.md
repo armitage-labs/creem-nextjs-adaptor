@@ -504,7 +504,7 @@ We welcome contributions! Please reach out on Discord for details.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/creem-nextjs.git
+git clone https://github.com/armitage-labs/creem-nextjs-adaptor.git
 
 # Install dependencies
 npm install
