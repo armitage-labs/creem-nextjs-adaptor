@@ -24,6 +24,7 @@ export const Checkout = ({
     const unitsParam = req.nextUrl.searchParams.get("units");
     const discountCode = req.nextUrl.searchParams.get("discountCode");
     const customerParam = req.nextUrl.searchParams.get("customer");
+    const customFieldsParam = req.nextUrl.searchParams.get("customFields");
     const successUrl = resolveSuccessUrl(
       req.nextUrl.searchParams.get("successUrl") ?? defaultSuccessUrl,
       req
@@ -63,12 +64,24 @@ export const Checkout = ({
       );
     }
 
+    // Parse customFields JSON if provided
+    let customFields;
+    try {
+      customFields = customFieldsParam ? JSON.parse(customFieldsParam) : undefined;
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid customFields JSON" },
+        { status: 400 }
+      );
+    }
+
     try {
       const checkout = await creem.checkouts.create({
         productId,
         units,
         discountCode: discountCode ?? undefined,
         ...(customer && { customer }),
+        ...(customFields && { customFields }),
         successUrl,
         metadata: {
           ...(metadata || {}),

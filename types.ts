@@ -60,14 +60,13 @@ export interface CreateCheckoutInput {
   customer?: CheckoutCustomer;
 
   /**
-   * Custom fields to include with the checkout (max 3).
+   * Custom fields to include with the checkout.
    * Useful for storing additional information about the purchase.
    *
    * @optional
-   * @maxItems 3
-   * @example [{ custom_field_1: "value1" }, { custom_field_2: "value2" }]
+   * @example { custom_field_1: "value1", custom_field_2: "value2" }
    */
-  customField?: Array<Record<string, unknown>>;
+  customFields?: Record<string, unknown>;
 
   /**
    * URL to redirect to after successful checkout.

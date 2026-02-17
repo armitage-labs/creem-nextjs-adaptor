@@ -50,6 +50,8 @@ pnpm install @creem_io/nextjs
 - React 18.0.0 or higher
 - A [Creem account](https://creem.io) with API keys
 
+> **Note:** This package uses the Creem SDK v1.3.6+ internally. The SDK is bundled as a dependency.
+
 ---
 
 ## Quick Start
@@ -165,6 +167,8 @@ import { CreemCheckout } from "@creem_io/nextjs";
 | `successUrl`   | `string`    | ❌       | URL to redirect after successful payment        |
 | `metadata`     | `object`    | ❌       | Custom metadata to attach to the checkout       |
 | `referenceId`  | `string`    | ❌       | Your internal user/order ID                     |
+| `customFields` | `object`    | ❌       | Custom fields to store with the checkout        |
+| `checkoutPath` | `string`    | ❌       | Custom API route path (default: `/checkout`)    |
 | `children`     | `ReactNode` | ❌       | Custom button or link content                   |
 
 ---
@@ -178,7 +182,6 @@ import { CreemPortal } from "@creem_io/nextjs";
 
 <CreemPortal
   customerId="cust_abc123"
-  returnUrl="/dashboard"
   className="btn-secondary"
 >
   Manage Subscription
@@ -190,7 +193,7 @@ import { CreemPortal } from "@creem_io/nextjs";
 | Prop         | Type                | Required | Description                                                |
 | ------------ | ------------------- | -------- | ---------------------------------------------------------- |
 | `customerId` | `string`            | ✅       | The Creem customer ID                                      |
-| `returnUrl`  | `string`            | ❌       | URL to return to after portal session                      |
+| `portalPath` | `string`            | ❌       | Custom API route path (default: `/portal`)                 |
 | `children`   | `ReactNode`         | ❌       | Custom button or link content                              |
 | ...linkProps | `HTMLAnchorElement` | ❌       | Any standard anchor tag props (`className`, `style`, etc.) |
 

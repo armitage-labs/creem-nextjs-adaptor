@@ -17,6 +17,7 @@ export const CreemCheckout = ({
   units,
   discountCode,
   customer,
+  customFields,
   successUrl,
   metadata,
   referenceId,
@@ -29,6 +30,7 @@ export const CreemCheckout = ({
   if (units) params.append("units", units.toString());
   if (discountCode) params.append("discountCode", discountCode);
   if (customer) params.append("customer", JSON.stringify(customer));
+  if (customFields) params.append("customFields", JSON.stringify(customFields));
   if (successUrl) params.append("successUrl", successUrl);
   if (metadata) params.append("metadata", JSON.stringify(metadata));
   if (referenceId) params.append("referenceId", referenceId);
