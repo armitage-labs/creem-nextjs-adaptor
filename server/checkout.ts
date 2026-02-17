@@ -13,12 +13,10 @@ export const Checkout = ({
   testMode = false,
   defaultSuccessUrl,
 }: CheckoutRouteInstance) => {
-  const serverURL = testMode
-    ? "https://test-api.creem.io"
-    : "https://api.creem.io";
-
+  // serverIdx: 0 = production, 1 = test
   const creem = new Creem({
-    serverURL,
+    apiKey,
+    serverIdx: testMode ? 1 : 0,
   });
 
   return async (req: NextRequest) => {
@@ -66,18 +64,15 @@ export const Checkout = ({
     }
 
     try {
-      const checkout = await creem.createCheckout({
-        xApiKey: apiKey,
-        createCheckoutRequest: {
-          productId,
-          units,
-          discountCode: discountCode ?? undefined,
-          ...(customer && { customer }),
-          successUrl,
-          metadata: {
-            ...(metadata || {}),
-            ...(referenceId && { referenceId }),
-          },
+      const checkout = await creem.checkouts.create({
+        productId,
+        units,
+        discountCode: discountCode ?? undefined,
+        ...(customer && { customer }),
+        successUrl,
+        metadata: {
+          ...(metadata || {}),
+          ...(referenceId && { referenceId }),
         },
       });
 

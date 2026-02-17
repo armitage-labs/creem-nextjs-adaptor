@@ -1,4 +1,4 @@
-import { Portal } from "@creem/nextjs";
+import { Portal } from "@creem_io/nextjs";
 
 export const GET = Portal({
   apiKey: process.env.CREEM_API_KEY!,
