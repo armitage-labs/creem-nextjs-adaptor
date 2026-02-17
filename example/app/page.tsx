@@ -1,6 +1,6 @@
 "use client";
 
-import { CreemCheckout, CreemPortal } from "@creem/nextjs";
+import { CreemCheckout, CreemPortal } from "@creem_io/nextjs";
 
 export default function Home() {
   const handleCreateCheckout = () => {

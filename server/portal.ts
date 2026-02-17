@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Creem } from "creem";
 
 interface PortalRouteInstance {
   apiKey: string;
   testMode?: boolean;
 }
 
-interface PortalResponse {
-  customer_portal_link: string;
-}
-
 export const Portal = ({ apiKey, testMode = false }: PortalRouteInstance) => {
-  const serverURL = testMode
-    ? "https://test-api.creem.io"
-    : "https://api.creem.io";
+  // serverIdx: 0 = production, 1 = test
+  const creem = new Creem({
+    apiKey,
+    serverIdx: testMode ? 1 : 0,
+  });
 
   return async (req: NextRequest) => {
     const customerId = req.nextUrl.searchParams.get("customerId");
@@ -25,35 +24,19 @@ export const Portal = ({ apiKey, testMode = false }: PortalRouteInstance) => {
     }
 
     try {
-      const response = await fetch(`${serverURL}/v1/customers/billing`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          customer_id: customerId,
-        }),
+      const portal = await creem.customers.generateBillingLinks({
+        customerId,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Creem API error: ${response.statusText} - ${errorText}`
-        );
-      }
-
-      const portal = (await response.json()) as PortalResponse;
-
       // Redirect to the portal URL
-      if (!portal.customer_portal_link) {
+      if (!portal.customerPortalLink) {
         return NextResponse.json(
           { error: "Portal URL not available" },
           { status: 500 }
         );
       }
 
-      return NextResponse.redirect(portal.customer_portal_link);
+      return NextResponse.redirect(portal.customerPortalLink);
     } catch (error) {
       console.error("Portal creation failed:", error);
 

@@ -7,7 +7,7 @@ export { Webhook } from "./server/webhook";
 
 // Re-export client components
 export { CreemCheckout, CreemPortal } from "./client";
-export type { CreemPortalProps } from "./client";
+export type { CreemCheckoutProps, CreemPortalProps } from "./client";
 
 // Re-export types
 export * from "./types";

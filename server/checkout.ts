@@ -13,12 +13,10 @@ export const Checkout = ({
   testMode = false,
   defaultSuccessUrl,
 }: CheckoutRouteInstance) => {
-  const serverURL = testMode
-    ? "https://test-api.creem.io"
-    : "https://api.creem.io";
-
+  // serverIdx: 0 = production, 1 = test
   const creem = new Creem({
-    serverURL,
+    apiKey,
+    serverIdx: testMode ? 1 : 0,
   });
 
   return async (req: NextRequest) => {
@@ -26,6 +24,7 @@ export const Checkout = ({
     const unitsParam = req.nextUrl.searchParams.get("units");
     const discountCode = req.nextUrl.searchParams.get("discountCode");
     const customerParam = req.nextUrl.searchParams.get("customer");
+    const customFieldsParam = req.nextUrl.searchParams.get("customFields");
     const successUrl = resolveSuccessUrl(
       req.nextUrl.searchParams.get("successUrl") ?? defaultSuccessUrl,
       req
@@ -65,19 +64,28 @@ export const Checkout = ({
       );
     }
 
+    // Parse customFields JSON if provided
+    let customFields;
     try {
-      const checkout = await creem.createCheckout({
-        xApiKey: apiKey,
-        createCheckoutRequest: {
-          productId,
-          units,
-          discountCode: discountCode ?? undefined,
-          ...(customer && { customer }),
-          successUrl,
-          metadata: {
-            ...(metadata || {}),
-            ...(referenceId && { referenceId }),
-          },
+      customFields = customFieldsParam ? JSON.parse(customFieldsParam) : undefined;
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid customFields JSON" },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const checkout = await creem.checkouts.create({
+        productId,
+        units,
+        discountCode: discountCode ?? undefined,
+        ...(customer && { customer }),
+        ...(customFields && { customFields }),
+        successUrl,
+        metadata: {
+          ...(metadata || {}),
+          ...(referenceId && { referenceId }),
         },
       });
 
